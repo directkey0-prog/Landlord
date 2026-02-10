@@ -2,13 +2,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
+import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
+import BackToTop from './components/BackToTop';
 import Login from './pages/landlord/Login';
 import Signup from './pages/landlord/Signup';
+import ForgotPassword from './pages/landlord/ForgotPassword';
 import Dashboard from './pages/landlord/Dashboard';
 import MyProperties from './pages/landlord/MyProperties';
 import AddProperty from './pages/landlord/AddProperty';
 import EditProperty from './pages/landlord/EditProperty';
 import Connections from './pages/landlord/Connections';
+import ContactAdmin from './pages/landlord/ContactAdmin';
 import Profile from './pages/landlord/Profile';
 
 const ProtectedLayout = () => {
@@ -27,11 +32,14 @@ const ProtectedLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Sidebar />
-      <main className="lg:ml-64 min-h-screen p-6 pt-16 lg:pt-6">
+      <main className="lg:ml-64 flex-1 p-6 pt-16 lg:pt-6">
         <Outlet />
       </main>
+      <div className="lg:ml-64">
+        <Footer />
+      </div>
     </div>
   );
 };
@@ -46,12 +54,14 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '12px', fontSize: '14px' } }} />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
           {/* Protected routes */}
           <Route element={<ProtectedLayout />}>
@@ -60,12 +70,14 @@ function App() {
             <Route path="/add-property" element={<AddProperty />} />
             <Route path="/edit-property/:id" element={<EditProperty />} />
             <Route path="/connections" element={<Connections />} />
+            <Route path="/contact-admin" element={<ContactAdmin />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        <BackToTop />
       </AuthProvider>
     </Router>
   );

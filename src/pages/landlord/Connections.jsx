@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiPhone, FiMail, FiCalendar, FiHome, FiSearch } from 'react-icons/fi';
+import { FiUsers, FiPhone, FiMail, FiHome, FiSearch } from 'react-icons/fi';
 import { getLandlordConnections } from '../../services/propertyService';
-
-const formatPrice = (amount) => new Intl.NumberFormat('en-NG').format(amount);
 
 const Connections = () => {
   const [connections, setConnections] = useState([]);
@@ -33,8 +31,6 @@ const Connections = () => {
     return matchesSearch && matchesProperty;
   });
 
-  const totalEarnings = connections.reduce((sum, c) => sum + (c.amount_paid || 0), 0);
-
   return (
     <div>
       {/* Header */}
@@ -44,7 +40,7 @@ const Connections = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center mb-3">
             <FiUsers className="text-primary-500 text-lg" />
@@ -58,13 +54,6 @@ const Connections = () => {
           </div>
           <p className="text-2xl font-bold text-navy-900">{propertyNames.length}</p>
           <p className="text-xs text-gray-500 mt-0.5">Properties Connected</p>
-        </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
-            <FiCalendar className="text-blue-600 text-lg" />
-          </div>
-          <p className="text-2xl font-bold text-navy-900">{'\u20A6'}{formatPrice(totalEarnings)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Connection Fees</p>
         </div>
       </div>
 
@@ -153,9 +142,8 @@ const Connections = () => {
                   </a>
                 </div>
 
-                {/* Date & Amount */}
+                {/* Date */}
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-medium text-green-600">{'\u20A6'}{formatPrice(conn.amount_paid)}</p>
                   <p className="text-xs text-gray-500">{new Date(conn.payment_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
               </div>

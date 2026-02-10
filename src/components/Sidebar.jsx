@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiKey, FiGrid, FiList, FiPlusCircle, FiUsers, FiUser, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { FiGrid, FiList, FiPlusCircle, FiUsers, FiUser, FiLogOut, FiMenu, FiX, FiMessageSquare } from 'react-icons/fi';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,6 +8,7 @@ const navItems = [
   { name: 'My Properties', path: '/my-properties', icon: FiList },
   { name: 'Add Property', path: '/add-property', icon: FiPlusCircle },
   { name: 'Connections', path: '/connections', icon: FiUsers },
+  { name: 'Contact Admin', path: '/contact-admin', icon: FiMessageSquare },
   { name: 'Profile', path: '/profile', icon: FiUser },
 ];
 
@@ -27,9 +28,7 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-navy-800">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <div className="w-9 h-9 bg-primary-400 rounded-lg flex items-center justify-center">
-            <FiKey className="text-white text-lg" />
-          </div>
+          <img src="/DIRECTKEYLOGO.png" alt="DirectKey" className="h-9 w-auto" />
           <span className="text-lg font-bold text-white">
             Direct<span className="text-primary-400">Key</span>
           </span>

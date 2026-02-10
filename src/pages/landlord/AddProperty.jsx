@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUpload, FiX, FiCheck, FiHome } from 'react-icons/fi';
+import { FiCheck, FiHome } from 'react-icons/fi';
 import { createProperty } from '../../services/propertyService';
+import ImageUploader from '../../components/ImageUploader';
 import { nigeriaStates, stateLGAs, lgaAreas } from '../../services/locationService';
 import toast from 'react-hot-toast';
 
@@ -29,7 +30,7 @@ const AddProperty = () => {
     amenities: [],
     images: [],
   });
-  const [imageUrls, setImageUrls] = useState(['', '', '', '']);
+  const [uploadedImages, setUploadedImages] = useState([]);
   const [locationData, setLocationData] = useState({ lgas: [], areas: [] });
   const [errors, setErrors] = useState({});
 
@@ -84,13 +85,15 @@ const AddProperty = () => {
     }
     setLoading(true);
     try {
-      const validImages = imageUrls.filter(url => url.trim());
+      const imageList = uploadedImages.length > 0
+        ? uploadedImages.map(img => img.preview || img.image_url)
+        : ['https://picsum.photos/seed/new/800/600'];
       await createProperty({
         ...form,
         bedrooms: parseInt(form.bedrooms),
         bathrooms: parseInt(form.bathrooms),
         price_per_year: parseInt(form.price_per_year),
-        images: validImages.length > 0 ? validImages : ['https://picsum.photos/seed/new/800/600'],
+        images: imageList,
       });
       toast.success('Property submitted for review!');
       navigate('/my-properties');
@@ -217,42 +220,8 @@ const AddProperty = () => {
         {/* Images */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <h2 className="font-bold text-navy-900 mb-2">Property Images</h2>
-          <p className="text-sm text-gray-500 mb-4">Add image URLs for your property (up to 4)</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {imageUrls.map((url, i) => (
-              <div key={i} className="relative">
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => {
-                      const updated = [...imageUrls];
-                      updated[i] = e.target.value;
-                      setImageUrls(updated);
-                    }}
-                    placeholder={`Image URL ${i + 1}`}
-                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                  />
-                  {url && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = [...imageUrls];
-                        updated[i] = '';
-                        setImageUrls(updated);
-                      }}
-                      className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center border-0 cursor-pointer text-gray-500 flex-shrink-0 mt-0.5"
-                    >
-                      <FiX />
-                    </button>
-                  )}
-                </div>
-                {url && (
-                  <img src={url} alt="" className="mt-2 w-full h-24 object-cover rounded-lg" onError={(e) => { e.target.style.display = 'none'; }} />
-                )}
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500 mb-4">Upload images of your property</p>
+          <ImageUploader images={uploadedImages} onChange={setUploadedImages} />
         </div>
 
         {/* Amenities */}

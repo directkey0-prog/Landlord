@@ -58,13 +58,18 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const forgotPassword = async (email) => {
+    await new Promise((r) => setTimeout(r, 1000));
+    return { success: true, message: 'Password reset link sent to ' + email };
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('landlord_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, forgotPassword }}>
       {children}
     </AuthContext.Provider>
   );
