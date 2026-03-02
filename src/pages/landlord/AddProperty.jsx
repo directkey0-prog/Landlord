@@ -7,7 +7,7 @@ import ImageUploader from '../../components/ImageUploader';
 import { nigeriaStates, stateLGAs } from '../../services/locationService';
 import toast from 'react-hot-toast';
 
-const propertyTypes = ['Apartment', 'Duplex', 'Bungalow', 'Semi-Detached', 'Penthouse', 'Studio'];
+const propertyTypes = ['Apartment', 'Duplex', 'Bungalow', 'Semi-Detached', 'Penthouse', 'Studio', 'Land'];
 const allAmenities = [
   '24hr Security', 'Parking Space', 'Water Supply', 'Electricity', 'Fitted Kitchen',
   'Swimming Pool', 'Gym', 'Internet', 'Furnished', 'Elevator', 'BQ', 'Garden',
@@ -33,6 +33,8 @@ const AddProperty = () => {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [locationData, setLocationData] = useState({ lgas: [] });
   const [errors, setErrors] = useState({});
+
+  const isLand = form.property_type === 'Land';
 
   useEffect(() => {
     if (form.state) {
@@ -60,8 +62,8 @@ const AddProperty = () => {
     if (!form.property_name.trim()) errs.property_name = 'Required';
     if (!form.description.trim()) errs.description = 'Required';
     if (!form.property_type) errs.property_type = 'Required';
-    if (!form.bedrooms) errs.bedrooms = 'Required';
-    if (!form.bathrooms) errs.bathrooms = 'Required';
+    if (!isLand && !form.bedrooms) errs.bedrooms = 'Required';
+    if (!isLand && !form.bathrooms) errs.bathrooms = 'Required';
     if (!form.price_per_year || parseInt(form.price_per_year) <= 0) errs.price_per_year = 'Enter a valid price';
     if (!form.state) errs.state = 'Required';
     if (!form.local_government) errs.local_government = 'Required';
@@ -83,8 +85,8 @@ const AddProperty = () => {
         : ['https://picsum.photos/seed/new/800/600'];
       await createProperty({
         ...form,
-        bedrooms: parseInt(form.bedrooms),
-        bathrooms: parseInt(form.bathrooms),
+        bedrooms: isLand ? 0 : parseInt(form.bedrooms),
+        bathrooms: isLand ? 0 : parseInt(form.bathrooms),
         price_per_year: parseInt(form.price_per_year),
         images: imageList,
       });
@@ -138,7 +140,7 @@ const AddProperty = () => {
               {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${isLand ? '' : 'sm:grid-cols-3'}`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type *</label>
                 <select value={form.property_type} onChange={(e) => updateField('property_type', e.target.value)} className={inputClass('property_type')}>
@@ -147,31 +149,37 @@ const AddProperty = () => {
                 </select>
                 {errors.property_type && <p className="text-xs text-red-500 mt-1">{errors.property_type}</p>}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms *</label>
-                <select value={form.bedrooms} onChange={(e) => updateField('bedrooms', e.target.value)} className={inputClass('bedrooms')}>
-                  <option value="">Select</option>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-                {errors.bedrooms && <p className="text-xs text-red-500 mt-1">{errors.bedrooms}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Bathrooms *</label>
-                <select value={form.bathrooms} onChange={(e) => updateField('bathrooms', e.target.value)} className={inputClass('bathrooms')}>
-                  <option value="">Select</option>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-                {errors.bathrooms && <p className="text-xs text-red-500 mt-1">{errors.bathrooms}</p>}
-              </div>
+              {!isLand && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms *</label>
+                    <select value={form.bedrooms} onChange={(e) => updateField('bedrooms', e.target.value)} className={inputClass('bedrooms')}>
+                      <option value="">Select</option>
+                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    {errors.bedrooms && <p className="text-xs text-red-500 mt-1">{errors.bedrooms}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Bathrooms *</label>
+                    <select value={form.bathrooms} onChange={(e) => updateField('bathrooms', e.target.value)} className={inputClass('bathrooms')}>
+                      <option value="">Select</option>
+                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    {errors.bathrooms && <p className="text-xs text-red-500 mt-1">{errors.bathrooms}</p>}
+                  </div>
+                </>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Price Per Year ({'\u20A6'}) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                {isLand ? 'Asking Price' : 'Price Per Year'} ({'\u20A6'}) *
+              </label>
               <input
                 type="number"
                 value={form.price_per_year}
                 onChange={(e) => updateField('price_per_year', e.target.value)}
-                placeholder="e.g., 2500000"
+                placeholder={isLand ? 'e.g., 25000000' : 'e.g., 2500000'}
                 className={inputClass('price_per_year')}
               />
               {errors.price_per_year && <p className="text-xs text-red-500 mt-1">{errors.price_per_year}</p>}
