@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { FiCheck, FiHome } from 'react-icons/fi';
 import { createProperty } from '../../services/propertyService';
 import ImageUploader from '../../components/ImageUploader';
-import { nigeriaStates, stateLGAs, lgaAreas } from '../../services/locationService';
+import { nigeriaStates, stateLGAs } from '../../services/locationService';
 import toast from 'react-hot-toast';
 
 const propertyTypes = ['Apartment', 'Duplex', 'Bungalow', 'Semi-Detached', 'Penthouse', 'Studio'];
@@ -31,22 +31,15 @@ const AddProperty = () => {
     images: [],
   });
   const [uploadedImages, setUploadedImages] = useState([]);
-  const [locationData, setLocationData] = useState({ lgas: [], areas: [] });
+  const [locationData, setLocationData] = useState({ lgas: [] });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (form.state) {
-      setLocationData(prev => ({ ...prev, lgas: stateLGAs[form.state] || [], areas: [] }));
+      setLocationData({ lgas: stateLGAs[form.state] || [] });
       setForm(prev => ({ ...prev, local_government: '', area: '' }));
     }
   }, [form.state]);
-
-  useEffect(() => {
-    if (form.state && form.local_government) {
-      setLocationData(prev => ({ ...prev, areas: lgaAreas[form.state]?.[form.local_government] || [] }));
-      setForm(prev => ({ ...prev, area: '' }));
-    }
-  }, [form.local_government]);
 
   const updateField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -189,29 +182,35 @@ const AddProperty = () => {
         {/* Location */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <h2 className="font-bold text-navy-900 mb-4">Location</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">State *</label>
-              <select value={form.state} onChange={(e) => updateField('state', e.target.value)} className={inputClass('state')}>
-                <option value="">Select state</option>
-                {nigeriaStates.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {errors.state && <p className="text-xs text-red-500 mt-1">{errors.state}</p>}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">State *</label>
+                <select value={form.state} onChange={(e) => updateField('state', e.target.value)} className={inputClass('state')}>
+                  <option value="">Select state</option>
+                  {nigeriaStates.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                {errors.state && <p className="text-xs text-red-500 mt-1">{errors.state}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">LGA *</label>
+                <select value={form.local_government} onChange={(e) => updateField('local_government', e.target.value)} disabled={!form.state} className={inputClass('local_government')}>
+                  <option value="">Select LGA</option>
+                  {locationData.lgas.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+                {errors.local_government && <p className="text-xs text-red-500 mt-1">{errors.local_government}</p>}
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">LGA *</label>
-              <select value={form.local_government} onChange={(e) => updateField('local_government', e.target.value)} disabled={!form.state} className={inputClass('local_government')}>
-                <option value="">Select LGA</option>
-                {locationData.lgas.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-              {errors.local_government && <p className="text-xs text-red-500 mt-1">{errors.local_government}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Area *</label>
-              <select value={form.area} onChange={(e) => updateField('area', e.target.value)} disabled={!form.local_government} className={inputClass('area')}>
-                <option value="">Select area</option>
-                {locationData.areas.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Area / Neighbourhood *</label>
+              <textarea
+                value={form.area}
+                onChange={(e) => updateField('area', e.target.value)}
+                rows={3}
+                maxLength={200}
+                placeholder="e.g., Lekki Phase 1, Ikeja GRA, Ajah, Victoria Island..."
+                className={inputClass('area')}
+              />
               {errors.area && <p className="text-xs text-red-500 mt-1">{errors.area}</p>}
             </div>
           </div>

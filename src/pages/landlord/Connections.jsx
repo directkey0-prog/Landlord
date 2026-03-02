@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiPhone, FiMail, FiHome, FiSearch } from 'react-icons/fi';
+import { FiUsers, FiHome, FiSearch } from 'react-icons/fi';
 import { getLandlordConnections } from '../../services/propertyService';
 
 const Connections = () => {
@@ -26,7 +26,8 @@ const Connections = () => {
   const propertyNames = [...new Set(connections.map(c => c.property_name))];
 
   const filtered = connections.filter(c => {
-    const matchesSearch = !search || c.tenant_name.toLowerCase().includes(search.toLowerCase()) || c.tenant_email.toLowerCase().includes(search.toLowerCase());
+    const firstName = c.tenant_name?.split(' ')[0] || '';
+    const matchesSearch = !search || firstName.toLowerCase().includes(search.toLowerCase());
     const matchesProperty = filterProperty === 'all' || c.property_name === filterProperty;
     return matchesSearch && matchesProperty;
   });
@@ -66,7 +67,7 @@ const Connections = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by tenant name or email..."
+              placeholder="Search by tenant name..."
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
             />
           </div>
@@ -112,43 +113,34 @@ const Connections = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((conn, index) => (
-            <motion.div
-              key={conn.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-white rounded-2xl shadow-sm p-5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Avatar & Name */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+          {filtered.map((conn, index) => {
+            const firstName = conn.tenant_name?.split(' ')[0] || 'Tenant';
+            const initial = firstName.charAt(0).toUpperCase();
+            const date = new Date(conn.payment_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
+            return (
+              <motion.div
+                key={conn.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-2xl shadow-sm p-5 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Avatar */}
                   <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-primary-500">{conn.tenant_name?.charAt(0)}</span>
+                    <span className="text-sm font-bold text-primary-500">{initial}</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-navy-900 truncate">{conn.tenant_name}</p>
+                  {/* Name & Property */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-navy-900">{firstName}</p>
                     <p className="text-xs text-gray-500 truncate">{conn.property_name}</p>
                   </div>
+                  {/* Date */}
+                  <p className="text-xs text-gray-400 flex-shrink-0">{date}</p>
                 </div>
-
-                {/* Contact Info */}
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <a href={`tel:${conn.tenant_phone}`} className="flex items-center gap-1.5 text-gray-600 hover:text-primary-500 no-underline">
-                    <FiPhone className="text-xs" /> {conn.tenant_phone}
-                  </a>
-                  <a href={`mailto:${conn.tenant_email}`} className="flex items-center gap-1.5 text-gray-600 hover:text-primary-500 no-underline">
-                    <FiMail className="text-xs" /> {conn.tenant_email}
-                  </a>
-                </div>
-
-                {/* Date */}
-                <div className="text-right flex-shrink-0">
-                  <p className="text-xs text-gray-500">{new Date(conn.payment_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>
