@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiCheck, FiX, FiArrowLeft } from 'react-icons/fi';
+import { FiCheck, FiArrowLeft } from 'react-icons/fi';
 import { getPropertyById, updateProperty } from '../../services/propertyService';
 import { nigeriaStates, stateLGAs } from '../../services/locationService';
+import ImageUploader from '../../components/ImageUploader';
 import toast from 'react-hot-toast';
+import { APARTMENT_SUB_TYPES } from '../../utils/propertyTypes';
 
-const propertyTypes = ['Apartment', 'Duplex', 'Bungalow', 'Semi-Detached', 'Penthouse', 'Studio', 'Land'];
 const allAmenities = [
   '24hr Security', 'Parking Space', 'Water Supply', 'Electricity', 'Fitted Kitchen',
   'Swimming Pool', 'Gym', 'Internet', 'Furnished', 'Elevator', 'BQ', 'Garden',
@@ -19,11 +19,12 @@ const EditProperty = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(null);
-  const [imageUrls, setImageUrls] = useState(['', '', '', '']);
+  const [uploadedImages, setUploadedImages] = useState([]);
   const [locationData, setLocationData] = useState({ lgas: [] });
   const [errors, setErrors] = useState({});
 
-  const isLand = form?.property_type === 'Land';
+  const isLand = form?.property_category === 'land';
+  const isApartment = form?.property_category === 'apartment_type';
 
   useEffect(() => {
     const load = async () => {
@@ -37,21 +38,26 @@ const EditProperty = () => {
         setForm({
           property_name: property.property_name || '',
           description: property.description || '',
-          property_type: property.property_type || '',
+          property_category: property.property_category || '',
+          apartment_sub_type: property.apartment_sub_type || '',
           bedrooms: String(property.bedrooms || ''),
           bathrooms: String(property.bathrooms || ''),
           price_per_year: String(property.price_per_year || ''),
+          land_area: String(property.land_area || ''),
+          land_unit: property.land_unit || 'sqm',
           state: property.state || '',
           local_government: property.local_government || '',
           area: property.area || '',
           amenities: property.amenities || [],
         });
-        const imgs = (property.property_images || []).map(i => i.image_url);
-        setImageUrls([...imgs, ...Array(4 - imgs.length).fill('')].slice(0, 4));
+        const imgs = (property.property_images || []).map(i => ({
+          preview: i.image_url,
+          image_url: i.image_url,
+          name: 'existing',
+        }));
+        setUploadedImages(imgs);
         if (property.state) {
-          setLocationData({
-            lgas: stateLGAs[property.state] || [],
-          });
+          setLocationData({ lgas: stateLGAs[property.state] || [] });
         }
       } catch (err) {
         toast.error('Failed to load property');
@@ -71,7 +77,11 @@ const EditProperty = () => {
   }, [form?.state]);
 
   const updateField = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'property_category') next.apartment_sub_type = '';
+      return next;
+    });
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
@@ -88,10 +98,12 @@ const EditProperty = () => {
     const errs = {};
     if (!form.property_name.trim()) errs.property_name = 'Required';
     if (!form.description.trim()) errs.description = 'Required';
-    if (!form.property_type) errs.property_type = 'Required';
+    if (!form.property_category) errs.property_category = 'Required';
+    if (isApartment && !form.apartment_sub_type) errs.apartment_sub_type = 'Required';
     if (!isLand && !form.bedrooms) errs.bedrooms = 'Required';
     if (!isLand && !form.bathrooms) errs.bathrooms = 'Required';
     if (!form.price_per_year || parseInt(form.price_per_year) <= 0) errs.price_per_year = 'Enter a valid price';
+    if (isLand && (!form.land_area || parseFloat(form.land_area) <= 0)) errs.land_area = 'Enter a valid land size';
     if (!form.state) errs.state = 'Required';
     if (!form.local_government) errs.local_government = 'Required';
     if (!form.area) errs.area = 'Required';
@@ -107,13 +119,20 @@ const EditProperty = () => {
     }
     setSaving(true);
     try {
-      const validImages = imageUrls.filter(url => url.trim());
+      const imageList = uploadedImages.length > 0
+        ? uploadedImages.map(img => img.preview || img.image_url)
+        : ['https://picsum.photos/seed/edit/800/600'];
       await updateProperty(id, {
         ...form,
+        property_category: form.property_category,
+        apartment_sub_type: isApartment ? form.apartment_sub_type : null,
         bedrooms: isLand ? 0 : parseInt(form.bedrooms),
         bathrooms: isLand ? 0 : parseInt(form.bathrooms),
         price_per_year: parseInt(form.price_per_year),
-        property_images: validImages.map(url => ({ image_url: url })),
+        land_area: isLand ? parseFloat(form.land_area) : null,
+        land_unit: isLand ? form.land_unit : null,
+        amenities: isLand ? [] : form.amenities,
+        property_images: imageList.map(url => ({ image_url: url })),
       });
       toast.success('Property updated successfully!');
       navigate('/my-properties');
@@ -171,35 +190,73 @@ const EditProperty = () => {
               <textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} rows={4} className={inputClass('description')} />
               {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
             </div>
-            <div className={`grid grid-cols-1 gap-4 ${isLand ? '' : 'sm:grid-cols-3'}`}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type *</label>
-                <select value={form.property_type} onChange={(e) => updateField('property_type', e.target.value)} className={inputClass('property_type')}>
-                  <option value="">Select type</option>
-                  {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+
+            {/* Category Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
+              <div className="flex gap-3">
+                {[
+                  { value: 'apartment_type', label: 'Apartment Type' },
+                  { value: 'land', label: 'Land' },
+                ].map(cat => (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => updateField('property_category', cat.value)}
+                    className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all border cursor-pointer ${
+                      form.property_category === cat.value
+                        ? 'bg-primary-50 border-primary-400 text-primary-600'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
-              {!isLand && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms *</label>
-                    <select value={form.bedrooms} onChange={(e) => updateField('bedrooms', e.target.value)} className={inputClass('bedrooms')}>
-                      <option value="">Select</option>
-                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                    {errors.bedrooms && <p className="text-xs text-red-500 mt-1">{errors.bedrooms}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Bathrooms *</label>
-                    <select value={form.bathrooms} onChange={(e) => updateField('bathrooms', e.target.value)} className={inputClass('bathrooms')}>
-                      <option value="">Select</option>
-                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                    {errors.bathrooms && <p className="text-xs text-red-500 mt-1">{errors.bathrooms}</p>}
-                  </div>
-                </>
-              )}
+              {errors.property_category && <p className="text-xs text-red-500 mt-1">{errors.property_category}</p>}
             </div>
+
+            {/* Apartment Sub-type */}
+            {isApartment && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Apartment Type *</label>
+                <select
+                  value={form.apartment_sub_type}
+                  onChange={(e) => updateField('apartment_sub_type', e.target.value)}
+                  className={inputClass('apartment_sub_type')}
+                >
+                  <option value="">Select apartment type</option>
+                  {APARTMENT_SUB_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                {errors.apartment_sub_type && <p className="text-xs text-red-500 mt-1">{errors.apartment_sub_type}</p>}
+              </div>
+            )}
+
+            {/* Bedrooms & Bathrooms */}
+            {!isLand && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms *</label>
+                  <select value={form.bedrooms} onChange={(e) => updateField('bedrooms', e.target.value)} className={inputClass('bedrooms')}>
+                    <option value="">Select</option>
+                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  {errors.bedrooms && <p className="text-xs text-red-500 mt-1">{errors.bedrooms}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Bathrooms *</label>
+                  <select value={form.bathrooms} onChange={(e) => updateField('bathrooms', e.target.value)} className={inputClass('bathrooms')}>
+                    <option value="">Select</option>
+                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  {errors.bathrooms && <p className="text-xs text-red-500 mt-1">{errors.bathrooms}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {isLand ? 'Asking Price' : 'Price Per Year'} ({'\u20A6'}) *
@@ -207,6 +264,34 @@ const EditProperty = () => {
               <input type="number" value={form.price_per_year} onChange={(e) => updateField('price_per_year', e.target.value)} placeholder={isLand ? 'e.g., 25000000' : 'e.g., 2500000'} className={inputClass('price_per_year')} />
               {errors.price_per_year && <p className="text-xs text-red-500 mt-1">{errors.price_per_year}</p>}
             </div>
+
+            {/* Land Size */}
+            {isLand && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Land Size *</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={form.land_area}
+                    onChange={(e) => updateField('land_area', e.target.value)}
+                    placeholder="e.g., 500"
+                    min="0"
+                    className={`flex-1 ${inputClass('land_area')}`}
+                  />
+                  <select
+                    value={form.land_unit}
+                    onChange={(e) => updateField('land_unit', e.target.value)}
+                    className="w-32 px-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                  >
+                    <option value="sqm">sqm</option>
+                    <option value="acres">Acres</option>
+                    <option value="hectares">Hectares</option>
+                    <option value="plots">Plots</option>
+                  </select>
+                </div>
+                {errors.land_area && <p className="text-xs text-red-500 mt-1">{errors.land_area}</p>}
+              </div>
+            )}
           </div>
         </div>
 
@@ -248,56 +333,34 @@ const EditProperty = () => {
         {/* Images */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <h2 className="font-bold text-navy-900 mb-2">Property Images</h2>
-          <p className="text-sm text-gray-500 mb-4">Update image URLs (up to 4)</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {imageUrls.map((url, i) => (
-              <div key={i}>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => {
-                      const updated = [...imageUrls];
-                      updated[i] = e.target.value;
-                      setImageUrls(updated);
-                    }}
-                    placeholder={`Image URL ${i + 1}`}
-                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                  />
-                  {url && (
-                    <button type="button" onClick={() => { const u = [...imageUrls]; u[i] = ''; setImageUrls(u); }} className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center border-0 cursor-pointer text-gray-500 flex-shrink-0 mt-0.5">
-                      <FiX />
-                    </button>
-                  )}
-                </div>
-                {url && <img src={url} alt="" className="mt-2 w-full h-24 object-cover rounded-lg" onError={(e) => { e.target.style.display = 'none'; }} />}
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500 mb-4">Upload images of your property</p>
+          <ImageUploader images={uploadedImages} onChange={setUploadedImages} />
         </div>
 
-        {/* Amenities */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="font-bold text-navy-900 mb-4">Amenities</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {allAmenities.map((amenity) => {
-              const selected = form.amenities.includes(amenity);
-              return (
-                <button
-                  key={amenity}
-                  type="button"
-                  onClick={() => toggleAmenity(amenity)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border cursor-pointer ${
-                    selected ? 'bg-primary-50 border-primary-400 text-primary-600' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  {selected ? <FiCheck className="text-primary-400" /> : <div className="w-4" />}
-                  {amenity}
-                </button>
-              );
-            })}
+        {/* Amenities — not for Land */}
+        {!isLand && (
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="font-bold text-navy-900 mb-4">Amenities</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {allAmenities.map((amenity) => {
+                const selected = form.amenities.includes(amenity);
+                return (
+                  <button
+                    key={amenity}
+                    type="button"
+                    onClick={() => toggleAmenity(amenity)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border cursor-pointer ${
+                      selected ? 'bg-primary-50 border-primary-400 text-primary-600' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {selected ? <FiCheck className="text-primary-400" /> : <div className="w-4" />}
+                    {amenity}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Submit */}
         <div className="flex gap-3">
