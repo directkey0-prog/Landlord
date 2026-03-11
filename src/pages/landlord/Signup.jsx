@@ -28,8 +28,8 @@ const Signup = () => {
     setLoading(true);
     try {
       await signup(form);
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      toast.success('Account created! Please log in.');
+      navigate('/login');
     } catch (err) {
       toast.error(err.message || 'Signup failed');
     } finally {

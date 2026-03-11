@@ -6,7 +6,7 @@ import { createProperty } from '../../services/propertyService';
 import ImageUploader from '../../components/ImageUploader';
 import { nigeriaStates, stateLGAs } from '../../services/locationService';
 import toast from 'react-hot-toast';
-import { APARTMENT_SUB_TYPES } from '../../utils/propertyTypes';
+import { APARTMENT_SUB_TYPES, LANDLORD_CATEGORIES } from '../../utils/propertyTypes';
 
 const allAmenities = [
   '24hr Security', 'Parking Space', 'Water Supply', 'Electricity', 'Fitted Kitchen',
@@ -38,6 +38,7 @@ const AddProperty = () => {
   const [errors, setErrors] = useState({});
 
   const isLand = form.property_category === 'land';
+  const isShop = form.property_category === 'shop';
   const isApartment = form.property_category === 'apartment_type';
 
   useEffect(() => {
@@ -71,10 +72,10 @@ const AddProperty = () => {
     if (!form.description.trim()) errs.description = 'Required';
     if (!form.property_category) errs.property_category = 'Required';
     if (isApartment && !form.apartment_sub_type) errs.apartment_sub_type = 'Required';
-    if (!isLand && !form.bedrooms) errs.bedrooms = 'Required';
-    if (!isLand && !form.bathrooms) errs.bathrooms = 'Required';
+    if (!isLand && !isShop && !form.bedrooms) errs.bedrooms = 'Required';
+    if (!isLand && !isShop && !form.bathrooms) errs.bathrooms = 'Required';
     if (!form.price_per_year || parseInt(form.price_per_year) <= 0) errs.price_per_year = 'Enter a valid price';
-    if (isLand && (!form.land_area || parseFloat(form.land_area) <= 0)) errs.land_area = 'Enter a valid land size';
+    if ((isLand || isShop) && (!form.land_area || parseFloat(form.land_area) <= 0)) errs.land_area = 'Enter a valid size';
     if (!form.state) errs.state = 'Required';
     if (!form.local_government) errs.local_government = 'Required';
     if (!form.area) errs.area = 'Required';
@@ -97,11 +98,11 @@ const AddProperty = () => {
         ...form,
         property_category: form.property_category,
         apartment_sub_type: isApartment ? form.apartment_sub_type : null,
-        bedrooms: isLand ? 0 : parseInt(form.bedrooms),
-        bathrooms: isLand ? 0 : parseInt(form.bathrooms),
+        bedrooms: (isLand || isShop) ? 0 : parseInt(form.bedrooms),
+        bathrooms: (isLand || isShop) ? 0 : parseInt(form.bathrooms),
         price_per_year: parseInt(form.price_per_year),
-        land_area: isLand ? parseFloat(form.land_area) : null,
-        land_unit: isLand ? form.land_unit : null,
+        land_area: (isLand || isShop) ? parseFloat(form.land_area) : null,
+        land_unit: (isLand || isShop) ? form.land_unit : null,
         amenities: isLand ? [] : form.amenities,
         images: imageList,
       });
@@ -158,16 +159,13 @@ const AddProperty = () => {
             {/* Category Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
-              <div className="flex gap-3">
-                {[
-                  { value: 'apartment_type', label: 'Apartment Type' },
-                  { value: 'land', label: 'Land' },
-                ].map(cat => (
+              <div className="flex flex-wrap gap-3">
+                {LANDLORD_CATEGORIES.map(cat => (
                   <button
                     key={cat.value}
                     type="button"
                     onClick={() => updateField('property_category', cat.value)}
-                    className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all border cursor-pointer ${
+                    className={`flex-1 min-w-[120px] py-3 rounded-xl text-sm font-medium transition-all border cursor-pointer ${
                       form.property_category === cat.value
                         ? 'bg-primary-50 border-primary-400 text-primary-600'
                         : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
@@ -198,8 +196,8 @@ const AddProperty = () => {
               </div>
             )}
 
-            {/* Bedrooms & Bathrooms */}
-            {!isLand && (
+            {/* Bedrooms & Bathrooms — not for land or shop */}
+            {!isLand && !isShop && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Bedrooms *</label>
@@ -223,7 +221,7 @@ const AddProperty = () => {
             {/* Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                {isLand ? 'Asking Price' : 'Price Per Year'} ({'\u20A6'}) *
+                {isLand ? 'Asking Price' : isShop ? 'Annual Rent' : 'Price Per Year'} ({'\u20A6'}) *
               </label>
               <input
                 type="number"
@@ -235,10 +233,12 @@ const AddProperty = () => {
               {errors.price_per_year && <p className="text-xs text-red-500 mt-1">{errors.price_per_year}</p>}
             </div>
 
-            {/* Land Size */}
-            {isLand && (
+            {/* Land / Shop Size */}
+            {(isLand || isShop) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Land Size *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {isShop ? 'Floor Area *' : 'Land Size *'}
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -310,7 +310,7 @@ const AddProperty = () => {
         </div>
 
         {/* Amenities — not for Land */}
-        {!isLand && (
+        {!isLand && !isShop && (
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h2 className="font-bold text-navy-900 mb-4">Amenities</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

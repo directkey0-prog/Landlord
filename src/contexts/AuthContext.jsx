@@ -2,14 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-// Mock landlord accounts for testing
-const mockLandlords = [
-  { id: '1', email: 'landlord1@test.com', password: 'Test123!', full_name: 'Chief Adebayo Ogundimu', phone: '+2348034521890' },
-  { id: '2', email: 'landlord2@test.com', password: 'Test123!', full_name: 'Alhaji Musa Ibrahim', phone: '+2348091234567' },
-  { id: '3', email: 'landlord3@test.com', password: 'Test123!', full_name: 'Mrs. Folake Adeyemi', phone: '+2348055678901' },
-  { id: '4', email: 'landlord4@test.com', password: 'Test123!', full_name: 'Dr. Olumide Fashola', phone: '+2348023456789' },
-  { id: '5', email: 'landlord5@test.com', password: 'Test123!', full_name: 'Engr. Chukwuemeka Obi', phone: '+2348067890123' },
-];
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -22,50 +15,68 @@ export const AuthProvider = ({ children }) => {
         setUser(JSON.parse(stored));
       } catch (e) {
         localStorage.removeItem('landlord_user');
+        localStorage.removeItem('landlord_token');
       }
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    // Mock login
-    const found = mockLandlords.find(l => l.email === email && l.password === password);
-    if (!found) {
-      throw new Error('Invalid email or password');
-    }
-    const userData = { id: found.id, email: found.email, full_name: found.full_name, phone: found.phone, role: 'landlord' };
-    setUser(userData);
+    const response = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Invalid email or password');
+
+    const token = data.session?.access_token;
+    const userData = {
+      id: data.user?.id,
+      email: data.user?.email,
+      full_name: data.user?.user_metadata?.full_name || data.user?.email,
+      phone: data.user?.user_metadata?.phone,
+      role: data.user?.user_metadata?.role || 'landlord',
+    };
+
+    if (token) localStorage.setItem('landlord_token', token);
     localStorage.setItem('landlord_user', JSON.stringify(userData));
+    setUser(userData);
     return userData;
   };
 
-  const signup = async (data) => {
-    // Mock signup
-    const exists = mockLandlords.find(l => l.email === data.email);
-    if (exists) {
-      throw new Error('Email already registered');
-    }
-    const userData = {
-      id: String(Date.now()),
-      email: data.email,
-      full_name: data.full_name,
-      phone: data.phone,
-      role: 'landlord',
-    };
-    mockLandlords.push({ ...userData, password: data.password });
-    setUser(userData);
-    localStorage.setItem('landlord_user', JSON.stringify(userData));
-    return userData;
+  const signup = async (formData) => {
+    const response = await fetch(`${API_BASE}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        role: 'landlord',
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Signup failed');
+    return data;
   };
 
   const forgotPassword = async (email) => {
-    await new Promise((r) => setTimeout(r, 1000));
-    return { success: true, message: 'Password reset link sent to ' + email };
+    const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to send reset email');
+    return data;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('landlord_user');
+    localStorage.removeItem('landlord_token');
   };
 
   return (

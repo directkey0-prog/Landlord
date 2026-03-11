@@ -12,12 +12,19 @@ export const APARTMENT_SUB_TYPES = [
   { value: 'self_contain', label: 'Self-Contain' },
 ];
 
+export const LANDLORD_CATEGORIES = [
+  { value: 'apartment_type', label: 'Apartment Type' },
+  { value: 'land', label: 'Land' },
+  { value: 'shop', label: 'Shop' },
+];
+
 export const ADMIN_CATEGORIES = [
   { value: 'apartment_type', label: 'Apartment Type' },
   { value: 'land', label: 'Land' },
   { value: 'shortlet', label: 'Shortlet' },
   { value: 'event_hall', label: 'Event Hall' },
   { value: 'office_space', label: 'Office Space' },
+  { value: 'shop', label: 'Shop' },
 ];
 
 export const CATEGORY_LABELS = {
@@ -26,6 +33,7 @@ export const CATEGORY_LABELS = {
   shortlet: 'Shortlet',
   event_hall: 'Event Hall',
   office_space: 'Office Space',
+  shop: 'Shop',
 };
 
 export const getTypeDisplay = (property) => {
