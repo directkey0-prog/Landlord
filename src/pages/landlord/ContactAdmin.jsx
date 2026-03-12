@@ -4,6 +4,8 @@ import { FiSend, FiMail } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
+
 const subjects = [
   'Property Listing Issue',
   'Account Problem',
@@ -29,11 +31,27 @@ const ContactAdmin = () => {
       return;
     }
     setLoading(true);
-    // Mock: simulate sending message
-    await new Promise((r) => setTimeout(r, 800));
-    setSent(true);
-    setLoading(false);
-    toast.success('Message sent to admin!');
+    try {
+      const res = await fetch(`${API_BASE}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user?.full_name || '',
+          email: user?.email || '',
+          phone: user?.phone_number || '',
+          subject: form.subject,
+          message: form.message,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send message');
+      setSent(true);
+      toast.success('Message sent to admin!');
+    } catch (err) {
+      toast.error(err.message || 'Could not send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {
