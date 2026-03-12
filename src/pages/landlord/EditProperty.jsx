@@ -50,11 +50,15 @@ const EditProperty = () => {
           area: property.area || '',
           amenities: property.amenities || [],
         });
-        const imgs = (property.property_images || []).map(i => ({
-          preview: i.image_url,
-          image_url: i.image_url,
-          name: 'existing',
-        }));
+        const imgs = (property.property_images || [])
+          .sort((a, b) => (a.image_order || 0) - (b.image_order || 0))
+          .map((i, idx) => ({
+            id: `existing-${idx}-${i.image_url}`,
+            status: 'done',
+            preview: i.image_url,
+            url: i.image_url,
+            name: 'existing',
+          }));
         setUploadedImages(imgs);
         if (property.state) {
           setLocationData({ lgas: stateLGAs[property.state] || [] });
@@ -119,9 +123,8 @@ const EditProperty = () => {
     }
     setSaving(true);
     try {
-      const imageList = uploadedImages.length > 0
-        ? uploadedImages.map(img => img.preview || img.image_url)
-        : ['https://picsum.photos/seed/edit/800/600'];
+      const doneImages = uploadedImages.filter(img => img.status === 'done').map(img => img.url || img.preview);
+      const imageList = doneImages.length > 0 ? doneImages : undefined;
       await updateProperty(id, {
         ...form,
         property_category: form.property_category,
@@ -132,7 +135,7 @@ const EditProperty = () => {
         land_area: isLand ? parseFloat(form.land_area) : null,
         land_unit: isLand ? form.land_unit : null,
         amenities: isLand ? [] : form.amenities,
-        property_images: imageList.map(url => ({ image_url: url })),
+        ...(imageList ? { images: imageList } : {}),
       });
       toast.success('Property updated successfully!');
       navigate('/my-properties');

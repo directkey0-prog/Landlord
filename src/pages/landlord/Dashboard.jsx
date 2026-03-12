@@ -3,20 +3,25 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiHome, FiCheckCircle, FiClock, FiXCircle, FiPlus, FiUsers, FiEye, FiArrowRight } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
-import { getLandlordProperties } from '../../services/propertyService';
+import { getLandlordProperties, getLandlordConnections } from '../../services/propertyService';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
+  const [connectionsCount, setConnectionsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getLandlordProperties();
-        setProperties(Array.isArray(data) ? data : []);
+        const [propsData, connData] = await Promise.all([
+          getLandlordProperties(),
+          getLandlordConnections().catch(() => []),
+        ]);
+        setProperties(Array.isArray(propsData) ? propsData : []);
+        setConnectionsCount(Array.isArray(connData) ? connData.length : 0);
       } catch (err) {
-        console.error('Failed to load properties:', err);
+        console.error('Failed to load dashboard data:', err);
       } finally {
         setLoading(false);
       }
@@ -30,7 +35,7 @@ const Dashboard = () => {
     pending: properties.filter(p => p.status === 'pending').length,
     rejected: properties.filter(p => p.status === 'rejected').length,
     totalViews: properties.reduce((sum, p) => sum + (p.views_count || 0), 0),
-    connections: 8,
+    connections: connectionsCount,
   };
 
   const statCards = [
