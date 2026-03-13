@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiKey, FiMail, FiLock, FiUser, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiMail, FiLock, FiUser, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -46,9 +46,7 @@ const Signup = () => {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-primary-400 rounded-lg flex items-center justify-center">
-              <FiKey className="text-white text-xl" />
-            </div>
+            <img src="/DIRECTKEYLOGO.png" alt="DirectKey" className="h-10 w-auto" />
             <span className="text-2xl font-bold text-navy-900">
               Direct<span className="text-primary-400">Key</span>
             </span>
