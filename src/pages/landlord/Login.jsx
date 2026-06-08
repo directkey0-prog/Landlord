@@ -56,7 +56,6 @@ const Login = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="landlord1@test.com"
                   className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
                 />
               </div>
@@ -70,7 +69,6 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Test123!"
                   className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
                 />
                 <button
@@ -105,12 +103,6 @@ const Login = () => {
             </Link>
           </p>
 
-          {/* Test credentials */}
-          <div className="mt-8 bg-navy-50 rounded-xl p-4">
-            <p className="text-xs font-medium text-navy-800 mb-2">Test Credentials:</p>
-            <p className="text-xs text-navy-600">Email: landlord1@test.com</p>
-            <p className="text-xs text-navy-600">Password: Test123!</p>
-          </div>
         </div>
       </div>
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiKey, FiMail, FiArrowLeft } from 'react-icons/fi';
+import { FiMail, FiArrowLeft } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ForgotPassword = () => {
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -15,20 +17,22 @@ const ForgotPassword = () => {
       return;
     }
     setLoading(true);
-    // Mock: simulate sending reset email
-    await new Promise((r) => setTimeout(r, 1000));
-    setSent(true);
-    setLoading(false);
-    toast.success('Password reset link sent!');
+    try {
+      await forgotPassword(email.trim());
+      setSent(true);
+      toast.success('Password reset link sent!');
+    } catch (err) {
+      toast.error(err.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-primary-400 rounded-lg flex items-center justify-center">
-            <FiKey className="text-white text-xl" />
-          </div>
+          <img src="/DIRECTKEYLOGO.png" alt="DirectKey" className="h-10 w-auto" />
           <span className="text-2xl font-bold text-navy-900">
             Direct<span className="text-primary-400">Key</span>
           </span>

@@ -8,6 +8,7 @@ import BackToTop from './components/BackToTop';
 import Login from './pages/landlord/Login';
 import Signup from './pages/landlord/Signup';
 import ForgotPassword from './pages/landlord/ForgotPassword';
+import ResetPassword from './pages/landlord/ResetPassword';
 import Dashboard from './pages/landlord/Dashboard';
 import MyProperties from './pages/landlord/MyProperties';
 import AddProperty from './pages/landlord/AddProperty';
@@ -62,6 +63,7 @@ function App() {
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected routes */}
           <Route element={<ProtectedLayout />}>

@@ -63,13 +63,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const forgotPassword = async (email) => {
+    const redirectTo = `${window.location.origin}/reset-password`;
     const response = await fetch(`${API_BASE}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, redirectTo }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to send reset email');
+    return data;
+  };
+
+  const resetPassword = async (access_token, refresh_token, new_password) => {
+    const response = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token, refresh_token, new_password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to reset password');
     return data;
   };
 
@@ -80,7 +92,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, forgotPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, forgotPassword, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
