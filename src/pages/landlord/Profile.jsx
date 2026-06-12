@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateProfile, changePassword } = useAuth();
   const [form, setForm] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
@@ -25,10 +25,14 @@ const Profile = () => {
       return;
     }
     setSaving(true);
-    // Mock save
-    await new Promise(r => setTimeout(r, 800));
-    toast.success('Profile updated successfully');
-    setSaving(false);
+    try {
+      await updateProfile(form.full_name, form.phone);
+      toast.success('Profile updated successfully');
+    } catch (err) {
+      toast.error(err.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async (e) => {
@@ -46,10 +50,15 @@ const Profile = () => {
       return;
     }
     setSavingPassword(true);
-    await new Promise(r => setTimeout(r, 800));
-    toast.success('Password changed successfully');
-    setPasswordForm({ current: '', new_password: '', confirm: '' });
-    setSavingPassword(false);
+    try {
+      await changePassword(passwordForm.current, passwordForm.new_password);
+      toast.success('Password changed successfully');
+      setPasswordForm({ current: '', new_password: '', confirm: '' });
+    } catch (err) {
+      toast.error(err.message || 'Failed to change password');
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   return (

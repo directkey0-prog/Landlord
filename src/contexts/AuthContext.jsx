@@ -85,6 +85,33 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const updateProfile = async (full_name, phone) => {
+    const token = localStorage.getItem('landlord_token');
+    const response = await fetch(`${API_BASE}/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ full_name, phone }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to update profile');
+    const updated = { ...user, full_name, phone };
+    setUser(updated);
+    localStorage.setItem('landlord_user', JSON.stringify(updated));
+    return data;
+  };
+
+  const changePassword = async (current_password, new_password) => {
+    const token = localStorage.getItem('landlord_token');
+    const response = await fetch(`${API_BASE}/auth/change-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ current_password, new_password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to change password');
+    return data;
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('landlord_user');
@@ -92,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, forgotPassword, resetPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, forgotPassword, resetPassword, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
